@@ -28,7 +28,7 @@ with st.sidebar:
     st.page_link("pages/2_Estadisticas.py", label="📈 Estadísticas")
     st.page_link("pages/3_Consultar.py", label="🔎 Consultar registros")
     st.page_link("pages/4_Agregar.py", label="➕ Agregar registro")
-    st.page_link("pages/5_Predicciones.py", label="🤖 Predicciones")
+    st.page_link("pages/5_Tendencias.py", label="🤖 Predicciones")
 
 st.subheader("Cómo usar la app")
 st.markdown(

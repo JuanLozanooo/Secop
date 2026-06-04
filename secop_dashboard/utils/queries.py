@@ -10,37 +10,41 @@ from db import get_engine
 TABLE_NAME = "secop"
 
 DISPLAY_COLUMNS = [
-    "Entidad",
-    "Nit Entidad",
-    "Departamento Entidad",
-    "Ciudad Entidad",
-    "OrdenEntidad",
-    "Fecha de Publicacion del Proceso",
-    "Precio Base",
-    "Modalidad de Contratacion",
-    "Duracion",
-    "Unidad de Duracion",
-    "Proveedores Invitados",
-    "Proveedores que Manifestaron Interes",
-    "Conteo de Respuestas a Ofertas",
-    "Proveedores Unicos con Respuestas",
-    "Numero de Lotes",
-    "Valor Total Adjudicacion",
-    "Codigo Principal de Categoria",
-    "Tipo de Contrato",
-    "Subtipo de Contrato",
-    "Estado Resumen",
-    "Estado del Procedimiento",
-    "Adjudicado",
+    "id_proceso",
+    "entidad",
+    "nit_entidad",
+    "departamento",
+    "ciudad",
+    "tipo_entidad",
+    "fecha_publicacion",
+    "anio",
+    "mes",
+    "trimestre",
+    "modalidad_contratacion",
+    "tipo_contrato",
+    "subtipo_contrato",
+    "categoria_compra",
+    "duracion_dias",
+    "proveedores_invitados",
+    "proveedores_interesados",
+    "ofertas_recibidas",
+    "proveedores_unicos",
+    "precio_base",
+    "valor_adjudicacion",
+    "ahorro_obtenido",
+    "porcentaje_ejecucion",
+    "nivel_competencia",
+    "estado_proceso",
+    "adjudicado",
 ]
 
 FILTER_COLUMNS = {
-    "Departamento Entidad": "departamento",
-    "Ciudad Entidad": "ciudad",
-    "Modalidad de Contratacion": "modalidad",
-    "Tipo de Contrato": "tipo_contrato",
-    "Estado Resumen": "estado_resumen",
-    "Adjudicado": "adjudicado",
+    "departamento": "departamento",
+    "ciudad": "ciudad",
+    "modalidad_contratacion": "modalidad",
+    "tipo_contrato": "tipo_contrato",
+    "estado_proceso": "estado_proceso",
+    "adjudicado": "adjudicado",
 }
 
 
@@ -51,8 +55,8 @@ def _quoted(col: str) -> str:
 def numeric_expr(col: str) -> str:
     q = _quoted(col)
     return (
-        f"NULLIF(" 
-        f"REGEXP_REPLACE(" 
+        f"NULLIF("
+        f"REGEXP_REPLACE("
         f"REPLACE(COALESCE(TRIM({q}::text), ''), ',', ''), "
         f"'[^0-9.-]', '', 'g'"
         f"), ''"
@@ -87,17 +91,17 @@ def get_overview_metrics() -> Dict[str, Any]:
     query = f"""
         SELECT
             COUNT(*) AS total_processes,
-            COUNT(DISTINCT {_quoted("Entidad")}) AS unique_entities,
-            COUNT(DISTINCT {_quoted("Departamento Entidad")}) AS unique_departments,
-            COUNT(DISTINCT {_quoted("Ciudad Entidad")}) AS unique_cities,
-            COUNT(DISTINCT {_quoted("Modalidad de Contratacion")}) AS unique_modalities,
-            COUNT(DISTINCT {_quoted("Tipo de Contrato")}) AS unique_contract_types,
-            COALESCE(SUM(({numeric_expr("Valor Total Adjudicacion")})::numeric), 0) AS total_awarded_value,
-            COALESCE(AVG(({numeric_expr("Valor Total Adjudicacion")})::numeric), 0) AS avg_awarded_value,
-            COALESCE(AVG(({numeric_expr("Precio Base")})::numeric), 0) AS avg_base_price,
-            COALESCE(AVG(({numeric_expr("Proveedores Invitados")})::numeric), 0) AS avg_invited,
-            COALESCE(AVG(({numeric_expr("Proveedores Unicos con Respuestas")})::numeric), 0) AS avg_unique_responses,
-            COALESCE(AVG(({numeric_expr("Conteo de Respuestas a Ofertas")})::numeric), 0) AS avg_offers
+            COUNT(DISTINCT {_quoted("entidad")}) AS unique_entities,
+            COUNT(DISTINCT {_quoted("departamento")}) AS unique_departments,
+            COUNT(DISTINCT {_quoted("ciudad")}) AS unique_cities,
+            COUNT(DISTINCT {_quoted("modalidad_contratacion")}) AS unique_modalities,
+            COUNT(DISTINCT {_quoted("tipo_contrato")}) AS unique_contract_types,
+            COALESCE(SUM(({numeric_expr("valor_adjudicacion")})::numeric), 0) AS total_awarded_value,
+            COALESCE(AVG(({numeric_expr("valor_adjudicacion")})::numeric), 0) AS avg_awarded_value,
+            COALESCE(AVG(({numeric_expr("precio_base")})::numeric), 0) AS avg_base_price,
+            COALESCE(AVG(({numeric_expr("proveedores_invitados")})::numeric), 0) AS avg_invited,
+            COALESCE(AVG(({numeric_expr("proveedores_unicos")})::numeric), 0) AS avg_unique_responses,
+            COALESCE(AVG(({numeric_expr("ofertas_recibidas")})::numeric), 0) AS avg_offers
         FROM {TABLE_NAME}
     """
     df = fetch_dataframe(query)
@@ -107,7 +111,7 @@ def get_overview_metrics() -> Dict[str, Any]:
 def get_top_counts(column: str, limit: int = 10) -> pd.DataFrame:
     query = f"""
         SELECT
-            COALESCE(NULLIF(TRIM({_quoted(column)}), ''), 'Sin dato') AS label,
+            COALESCE(NULLIF(TRIM({_quoted(column)}::text), ''), 'Sin dato') AS label,
             COUNT(*) AS value
         FROM {TABLE_NAME}
         GROUP BY 1
@@ -120,7 +124,7 @@ def get_top_counts(column: str, limit: int = 10) -> pd.DataFrame:
 def get_top_values(column: str, value_column: str, limit: int = 10) -> pd.DataFrame:
     query = f"""
         SELECT
-            COALESCE(NULLIF(TRIM({_quoted(column)}), ''), 'Sin dato') AS label,
+            COALESCE(NULLIF(TRIM({_quoted(column)}::text), ''), 'Sin dato') AS label,
             COALESCE(SUM(({numeric_expr(value_column)})::numeric), 0) AS value
         FROM {TABLE_NAME}
         GROUP BY 1
@@ -131,13 +135,10 @@ def get_top_values(column: str, value_column: str, limit: int = 10) -> pd.DataFr
 
 
 def get_yearly_publications(limit: int = 20) -> pd.DataFrame:
+    # Ahora usamos la columna nativa "anio" en lugar de parsear la fecha
     query = f"""
         SELECT
-            CASE
-                WHEN TRIM({_quoted("Fecha de Publicacion del Proceso")}) ~ '^[0-9]{{4}}'
-                THEN SUBSTRING(TRIM({_quoted("Fecha de Publicacion del Proceso")}) FROM 1 FOR 4)
-                ELSE 'Sin dato'
-            END AS anio,
+            COALESCE(NULLIF(TRIM({_quoted("anio")}::text), ''), 'Sin dato') AS anio,
             COUNT(*) AS value
         FROM {TABLE_NAME}
         GROUP BY 1
@@ -149,7 +150,7 @@ def get_yearly_publications(limit: int = 20) -> pd.DataFrame:
 
 def get_filter_options(column: str, limit: int = 300) -> List[str]:
     query = f"""
-        SELECT DISTINCT COALESCE(NULLIF(TRIM({_quoted(column)}), ''), 'Sin dato') AS value
+        SELECT DISTINCT COALESCE(NULLIF(TRIM({_quoted(column)}::text), ''), 'Sin dato') AS value
         FROM {TABLE_NAME}
         ORDER BY 1
         LIMIT :limit
@@ -165,39 +166,22 @@ def get_filtered_count(filters: Dict[str, Optional[str]]) -> int:
 
 
 def get_filtered_page(
-    filters: Dict[str, Optional[str]],
-    page: int = 1,
-    page_size: int = 50,
+        filters: Dict[str, Optional[str]],
+        page: int = 1,
+        page_size: int = 50,
 ) -> pd.DataFrame:
     where_sql, params = _base_where(filters)
     offset = max(page - 1, 0) * page_size
+
+    # Genera la lista de columnas seleccionadas basada en DISPLAY_COLUMNS
+    cols_sql = ",\n            ".join([f'{_quoted(c)} AS "{c}"' for c in DISPLAY_COLUMNS])
+
     query = f"""
         SELECT
-            {_quoted("Entidad")} AS "Entidad",
-            {_quoted("Nit Entidad")} AS "Nit Entidad",
-            {_quoted("Departamento Entidad")} AS "Departamento Entidad",
-            {_quoted("Ciudad Entidad")} AS "Ciudad Entidad",
-            {_quoted("OrdenEntidad")} AS "OrdenEntidad",
-            {_quoted("Fecha de Publicacion del Proceso")} AS "Fecha de Publicacion del Proceso",
-            {_quoted("Precio Base")} AS "Precio Base",
-            {_quoted("Modalidad de Contratacion")} AS "Modalidad de Contratacion",
-            {_quoted("Duracion")} AS "Duracion",
-            {_quoted("Unidad de Duracion")} AS "Unidad de Duracion",
-            {_quoted("Proveedores Invitados")} AS "Proveedores Invitados",
-            {_quoted("Proveedores que Manifestaron Interes")} AS "Proveedores que Manifestaron Interes",
-            {_quoted("Conteo de Respuestas a Ofertas")} AS "Conteo de Respuestas a Ofertas",
-            {_quoted("Proveedores Unicos con Respuestas")} AS "Proveedores Unicos con Respuestas",
-            {_quoted("Numero de Lotes")} AS "Numero de Lotes",
-            {_quoted("Valor Total Adjudicacion")} AS "Valor Total Adjudicacion",
-            {_quoted("Codigo Principal de Categoria")} AS "Codigo Principal de Categoria",
-            {_quoted("Tipo de Contrato")} AS "Tipo de Contrato",
-            {_quoted("Subtipo de Contrato")} AS "Subtipo de Contrato",
-            {_quoted("Estado Resumen")} AS "Estado Resumen",
-            {_quoted("Estado del Procedimiento")} AS "Estado del Procedimiento",
-            {_quoted("Adjudicado")} AS "Adjudicado"
+            {cols_sql}
         FROM {TABLE_NAME}
         {where_sql}
-        ORDER BY {_quoted("Fecha de Publicacion del Proceso")} DESC NULLS LAST
+        ORDER BY {_quoted("fecha_publicacion")} DESC NULLS LAST
         LIMIT :limit OFFSET :offset
     """
     params.update({"limit": page_size, "offset": offset})
@@ -207,20 +191,21 @@ def get_filtered_page(
 def get_table_sample(limit: int = 15000) -> pd.DataFrame:
     query = f"""
         SELECT
-            {_quoted("Precio Base")} AS "Precio Base",
-            {_quoted("Duracion")} AS "Duracion",
-            {_quoted("Proveedores Invitados")} AS "Proveedores Invitados",
-            {_quoted("Proveedores que Manifestaron Interes")} AS "Proveedores que Manifestaron Interes",
-            {_quoted("Conteo de Respuestas a Ofertas")} AS "Conteo de Respuestas a Ofertas",
-            {_quoted("Proveedores Unicos con Respuestas")} AS "Proveedores Unicos con Respuestas",
-            {_quoted("Numero de Lotes")} AS "Numero de Lotes",
-            {_quoted("Valor Total Adjudicacion")} AS "Valor Total Adjudicacion",
-            {_quoted("Modalidad de Contratacion")} AS "Modalidad de Contratacion",
-            {_quoted("Tipo de Contrato")} AS "Tipo de Contrato",
-            {_quoted("Departamento Entidad")} AS "Departamento Entidad",
-            {_quoted("Ciudad Entidad")} AS "Ciudad Entidad",
-            {_quoted("Estado Resumen")} AS "Estado Resumen",
-            {_quoted("Adjudicado")} AS "Adjudicado"
+            {_quoted("precio_base")} AS "precio_base",
+            {_quoted("duracion_dias")} AS "duracion_dias",
+            {_quoted("proveedores_invitados")} AS "proveedores_invitados",
+            {_quoted("proveedores_interesados")} AS "proveedores_interesados",
+            {_quoted("ofertas_recibidas")} AS "ofertas_recibidas",
+            {_quoted("proveedores_unicos")} AS "proveedores_unicos",
+            {_quoted("valor_adjudicacion")} AS "valor_adjudicacion",
+            {_quoted("modalidad_contratacion")} AS "modalidad_contratacion",
+            {_quoted("tipo_contrato")} AS "tipo_contrato",
+            {_quoted("departamento")} AS "departamento",
+            {_quoted("ciudad")} AS "ciudad",
+            {_quoted("estado_proceso")} AS "estado_proceso",
+            {_quoted("adjudicado")} AS "adjudicado",
+            {_quoted("anio")} AS "anio",
+            {_quoted("mes")} AS "mes"
         FROM {TABLE_NAME}
         LIMIT :limit
     """

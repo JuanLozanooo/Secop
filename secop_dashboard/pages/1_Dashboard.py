@@ -31,14 +31,14 @@ st.divider()
 left, right = st.columns(2)
 
 with left:
-    df_dep = get_top_counts("Departamento Entidad", 10)
+    df_dep = get_top_counts("departamento", 10)
     if not df_dep.empty:
         fig = px.bar(df_dep, x="value", y="label", orientation="h", title="Top departamentos por procesos")
         fig.update_layout(yaxis_title="", xaxis_title="Cantidad de procesos")
         st.plotly_chart(fig, use_container_width=True)
 
 with right:
-    df_val_dep = get_top_values("Departamento Entidad", "Valor Total Adjudicacion", 10)
+    df_val_dep = get_top_values("departamento", "valor_adjudicacion", 10)
     if not df_val_dep.empty:
         fig = px.bar(df_val_dep, x="value", y="label", orientation="h", title="Top departamentos por valor adjudicado")
         fig.update_layout(yaxis_title="", xaxis_title="Valor adjudicado")
@@ -47,14 +47,14 @@ with right:
 left, right = st.columns(2)
 
 with left:
-    df_mod = get_top_counts("Modalidad de Contratacion", 10)
+    df_mod = get_top_counts("modalidad_contratacion", 10)
     if not df_mod.empty:
         fig = px.bar(df_mod, x="label", y="value", title="Modalidad de contratación")
         fig.update_layout(xaxis_title="", yaxis_title="Cantidad")
         st.plotly_chart(fig, use_container_width=True)
 
 with right:
-    df_tipo = get_top_counts("Tipo de Contrato", 10)
+    df_tipo = get_top_counts("tipo_contrato", 10)
     if not df_tipo.empty:
         fig = px.bar(df_tipo, x="label", y="value", title="Tipo de contrato")
         fig.update_layout(xaxis_title="", yaxis_title="Cantidad")
@@ -63,7 +63,7 @@ with right:
 left, right = st.columns(2)
 
 with left:
-    df_cat = get_top_counts("Codigo Principal de Categoria", 10)
+    df_cat = get_top_counts("categoria_compra", 10)
     if not df_cat.empty:
         fig = px.bar(df_cat, x="value", y="label", orientation="h", title="Top categorías")
         fig.update_layout(yaxis_title="", xaxis_title="Cantidad")
