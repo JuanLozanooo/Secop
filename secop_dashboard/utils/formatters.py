@@ -3,13 +3,13 @@ def money_fmt(value):
         value = float(value)
     except Exception:
         return "$0"
-    if abs(value) >= 1_000_000_000:
-        return f"${value/1_000_000_000:.2f} B"
-    if abs(value) >= 1_000_000:
-        return f"${value/1_000_000:.2f} M"
-    if abs(value) >= 1_000:
-        return f"${value/1_000:.2f} K"
-    return f"${value:,.0f}"
+
+    formatted = f"{value:,.2f}"
+
+    main_part, decimal_part = formatted.split(".")
+    main_part = main_part.replace(",", ".")
+
+    return f"${main_part},{decimal_part}"
 
 
 def int_fmt(value):
