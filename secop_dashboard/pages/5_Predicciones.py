@@ -18,16 +18,21 @@ st.write(
 
 
 def _to_num(series: pd.Series) -> pd.Series:
-    return (
-        series.astype(str)
-        .str.replace(r"[^0-9.\-]", "", regex=True)
-        .replace("", pd.NA)
-        .astype(float)
+    s = series.astype(str).str.strip()
+
+    s = (
+        s.str.replace("$", "", regex=False)
+         .str.replace(" ", "", regex=False)
+         .str.replace(".", "", regex=False)
+         .str.replace(",", ".", regex=False)
     )
 
+    return pd.to_numeric(s, errors="coerce")
 
 if st.button("Entrenar modelo"):
     df = get_table_sample(limit=15000)
+    st.write("Columnas encontradas:")
+    st.write(df.columns.tolist())
 
     numeric_cols = [
         "Precio Base",
@@ -49,7 +54,11 @@ if st.button("Entrenar modelo"):
     ]
 
     for col in numeric_cols:
-        df[col] = _to_num(df[col])
+        if col in df.columns:
+            df[col] = _to_num(df[col])
+        else:
+            st.error(f"No existe la columna: {col}")
+            st.stop()
 
     df = df.dropna(subset=["Valor Total Adjudicacion"])
     if len(df) < 100:
@@ -92,7 +101,8 @@ if st.button("Entrenar modelo"):
     pipe.fit(X_train, y_train)
     pred = pipe.predict(X_test)
 
-    rmse = mean_squared_error(y_test, pred, squared=False)
+    mse = mean_squared_error(y_test, pred)
+    rmse = mse ** 0.5
     mae = mean_absolute_error(y_test, pred)
     r2 = r2_score(y_test, pred)
 
@@ -145,7 +155,8 @@ if st.button("Entrenar modelo"):
         )
 
         for col in numeric_features:
-            sample[col] = _to_num(sample[col])
+            if col in sample.columns:
+                sample[col] = _to_num(sample[col])
 
         prediction = pipe.predict(sample[feature_cols])[0]
         st.metric("Valor Total Adjudicación estimado", f"{prediction:,.2f}")
