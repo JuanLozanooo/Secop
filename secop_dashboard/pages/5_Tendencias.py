@@ -47,33 +47,35 @@ if st.button("Generar Informe de Tendencias"):
     fig_val.update_layout(title="Volumen Mensual de Adjudicación", xaxis_title="Periodo", yaxis_title="$")
     st.plotly_chart(fig_val, use_container_width=True)
 
-    # --- 2. Análisis de Competitividad ---
-    st.subheader("Dinámicas de Competencia")
-    col1, col2 = st.columns(2)
+    # 1. Gráfico: ¿Dónde se va el dinero realmente? (Pareto de Categorías)
+    st.subheader("Concentración del Gasto Público")
+    df_cat = df.groupby("categoria_compra")["valor_adjudicacion"].sum().reset_index().sort_values("valor_adjudicacion",
+                                                                                                  ascending=False).head(
+        10)
+    fig_cat = px.treemap(df_cat, path=['categoria_compra'], values='valor_adjudicacion',
+                         title="Distribución del Presupuesto por Categoría (Top 10)")
+    st.plotly_chart(fig_cat, use_container_width=True)
 
-    with col1:
-        df_comp = df.groupby("nivel_competencia")["id_proceso"].count().reset_index()
-        fig_comp = px.pie(df_comp, names="nivel_competencia", values="id_proceso",
-                          title="Distribución de Niveles de Competencia", hole=0.4)
-        st.plotly_chart(fig_comp, use_container_width=True)
+    # 2. Gráfico: Eficiencia (¿Ahorramos más cuando hay más competencia?)
+    st.subheader("Efectividad del Ahorro vs. Competencia")
+    fig_eff = px.scatter(df, x="ofertas_recibidas", y="ahorro_obtenido", color="nivel_competencia",
+                         size="valor_adjudicacion", hover_data=["entidad"],
+                         title="Correlación: ¿Más oferentes generan más ahorro?",
+                         labels={"ofertas_recibidas": "Número de Ofertas", "ahorro_obtenido": "Dinero Ahorrado ($)"})
+    st.plotly_chart(fig_eff, use_container_width=True)
 
-    with col2:
-        fig_box = px.box(df, x="nivel_competencia", y="ofertas_recibidas", color="nivel_competencia",
-                         title="Ofertas Recibidas por Nivel de Competencia")
-        st.plotly_chart(fig_box, use_container_width=True)
-
-    # --- 3. Insights ---
+    # 3. Insights Detallados (Párrafo largo)
     st.divider()
-    st.subheader("💡 Insights Estratégicos")
-    total_val = df["valor_adjudicacion"].sum()
-    avg_ahorro = df["ahorro_obtenido"].sum() / total_val if total_val > 0 else 0
-    max_competencia = df.groupby("nivel_competencia")["id_proceso"].count().idxmax()
+    st.subheader("📝 Diagnóstico Narrativo")
+
+    total_adjudicado = df["valor_adjudicacion"].sum()
+    total_ahorro = df["ahorro_obtenido"].sum()
+    eficiencia = (total_ahorro / total_adjudicado) * 100 if total_adjudicado > 0 else 0
+    top_sector = df.groupby("categoria_compra")["valor_adjudicacion"].sum().idxmax()
 
     st.markdown(f"""
-    * **Eficiencia Global:** Ahorro promedio de **{avg_ahorro:.2%}** sobre el valor total.
-    * **Perfil de Competencia:** El nivel predominante es **{max_competencia}**.
-    * **Relación Presupuesto-Adjudicación:** Tendencia a la {'optimización' if avg_ahorro > 0.05 else 'estabilidad'} presupuestal.
-    """)
+        El análisis actual de la base de datos de contratación revela una dinámica de gasto caracterizada por una marcada concentración presupuestal en el sector de **{top_sector}**, lo cual sugiere que la estrategia de adquisiciones de la entidad está fuertemente orientada a demandas de suministro específicas que absorben gran parte de la capacidad financiera disponible. Al observar la relación entre la participación de mercado y la eficiencia presupuestal, se identifica que los procesos catalogados bajo niveles de competencia alta no siempre traducen un incremento proporcional en el ahorro obtenido, lo que abre una línea de investigación sobre si la pluralidad de oferentes está incidiendo realmente en una reducción de precios o si, por el contrario, existen factores de rigidez administrativa que limitan la capacidad negociadora del Estado en procesos altamente disputados. En términos agregados, el sistema ha logrado capturar un ahorro real de un **{eficiencia:.2f}%** sobre el valor total adjudicado; sin embargo, la alta variabilidad en los resultados sugiere que, mientras que ciertos tipos de contrato operan con márgenes de ahorro optimizados, otros procesos presentan ineficiencias sistemáticas que requieren una revisión profunda de los precios base establecidos en las etapas precontractuales para evitar el desaprovechamiento de economías de escala y asegurar que el uso de los recursos públicos se mantenga alineado con las proyecciones de ahorro institucional planteadas al inicio de cada vigencia.
+        """)
 
     # --- 4. Correlación ---
     st.subheader("Mapa de Relación Presupuestal")
