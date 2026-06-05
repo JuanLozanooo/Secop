@@ -188,29 +188,40 @@ def get_filtered_page(
     return fetch_dataframe(query, params)
 
 
-def get_table_sample(limit: int = 15000) -> pd.DataFrame:
+def get_table_sample(limit: int = 25000) -> pd.DataFrame:
+    # He incluido la lista completa de columnas de tu esquema actual
     query = f"""
         SELECT
-            {_quoted("precio_base")} AS "precio_base",
-            {_quoted("duracion_dias")} AS "duracion_dias",
-            {_quoted("proveedores_invitados")} AS "proveedores_invitados",
-            {_quoted("proveedores_interesados")} AS "proveedores_interesados",
-            {_quoted("ofertas_recibidas")} AS "ofertas_recibidas",
-            {_quoted("proveedores_unicos")} AS "proveedores_unicos",
-            {_quoted("valor_adjudicacion")} AS "valor_adjudicacion",
-            {_quoted("modalidad_contratacion")} AS "modalidad_contratacion",
-            {_quoted("tipo_contrato")} AS "tipo_contrato",
-            {_quoted("departamento")} AS "departamento",
-            {_quoted("ciudad")} AS "ciudad",
-            {_quoted("estado_proceso")} AS "estado_proceso",
-            {_quoted("adjudicado")} AS "adjudicado",
-            {_quoted("anio")} AS "anio",
-            {_quoted("mes")} AS "mes"
+            id_proceso,
+            entidad,
+            nit_entidad,
+            departamento,
+            ciudad,
+            tipo_entidad,
+            fecha_publicacion,
+            anio,
+            mes,
+            trimestre,
+            modalidad_contratacion,
+            tipo_contrato,
+            subtipo_contrato,
+            categoria_compra,
+            duracion_dias,
+            proveedores_invitados,
+            proveedores_interesados,
+            ofertas_recibidas,
+            proveedores_unicos,
+            precio_base,
+            valor_adjudicacion,
+            ahorro_obtenido,
+            porcentaje_ejecucion,
+            nivel_competencia,
+            estado_proceso,
+            adjudicado
         FROM {TABLE_NAME}
         LIMIT :limit
     """
     return fetch_dataframe(query, {"limit": limit})
-
 
 def insert_record(record: Dict[str, Any]) -> None:
     engine = get_engine()

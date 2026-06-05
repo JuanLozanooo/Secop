@@ -14,27 +14,29 @@ st.write(
 if st.button("Generar Informe de Tendencias"):
     df = get_table_sample(limit=25000)
 
-    # 1. Normalización total de columnas para evitar KeyErrors
+    # LIMPIEZA CRÍTICA: Normalizar nombres de columnas a minúsculas y sin espacios
     df.columns = df.columns.str.strip().str.lower()
 
-    # 2. Definición de columnas esperadas (según tu esquema real)
-    numeric_cols = ["anio", "mes", "valor_adjudicacion", "precio_base", "ahorro_obtenido", "ofertas_recibidas"]
+    # Lista estricta basada en tu CSV
+    target_cols = ["anio", "mes", "valor_adjudicacion", "precio_base", "ahorro_obtenido", "ofertas_recibidas",
+                   "id_proceso", "nivel_competencia"]
 
-    # 3. Conversión segura: solo procesamos lo que existe
-    for col in numeric_cols:
+    # Validar y convertir solo si existen
+    for col in target_cols:
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
         else:
-            st.error(f"Error: La columna esperada '{col}' no existe en la base de datos.")
+            st.error(
+                f"Error: La columna '{col}' no se encuentra en la base de datos. Columnas reales: {df.columns.tolist()}")
             st.stop()
 
-    # --- 1. Tendencia de Valor y Eficiencia (Ahorro) ---
+    # --- 1. Tendencia de Valor y Eficiencia ---
     st.subheader("Evolución de Valor y Eficiencia")
     df_grouped = df.groupby(["anio", "mes"])[["valor_adjudicacion", "ahorro_obtenido"]].sum().reset_index()
-    df_grouped["periodo"] = df_grouped["anio"].astype(str) + "-" + df_grouped["mes"].astype(str).str.zfill(2)
+    df_grouped["periodo"] = df_grouped["anio"].astype(int).astype(str) + "-" + df_grouped["mes"].astype(int).astype(
+        str).str.zfill(2)
     df_grouped = df_grouped.sort_values(["anio", "mes"])
 
-    # Cálculo de Media Móvil para Valor
     df_grouped["Tendencia (Media 3M)"] = df_grouped["valor_adjudicacion"].rolling(window=3).mean()
 
     fig_val = go.Figure()
@@ -50,7 +52,6 @@ if st.button("Generar Informe de Tendencias"):
     col1, col2 = st.columns(2)
 
     with col1:
-        # Usamos nombres en minúsculas
         df_comp = df.groupby("nivel_competencia")["id_proceso"].count().reset_index()
         fig_comp = px.pie(df_comp, names="nivel_competencia", values="id_proceso",
                           title="Distribución de Niveles de Competencia", hole=0.4)
@@ -61,27 +62,21 @@ if st.button("Generar Informe de Tendencias"):
                          title="Ofertas Recibidas por Nivel de Competencia")
         st.plotly_chart(fig_box, use_container_width=True)
 
-    # --- 3. Insights Detallados Automáticos ---
+    # --- 3. Insights ---
     st.divider()
     st.subheader("💡 Insights Estratégicos")
-
     total_val = df["valor_adjudicacion"].sum()
     avg_ahorro = df["ahorro_obtenido"].sum() / total_val if total_val > 0 else 0
     max_competencia = df.groupby("nivel_competencia")["id_proceso"].count().idxmax()
 
     st.markdown(f"""
-    * **Eficiencia Global:** El ahorro promedio obtenido sobre el valor total adjudicado es del **{avg_ahorro:.2%}**. 
-      * *Interpretación:* Si este porcentaje es bajo, sugiere que los precios base están muy ajustados al valor real del mercado.
-    * **Perfil de Competencia:** El nivel de competencia predominante es **{max_competencia}**.
-      * *Interpretación:* Esto indica la facilidad de entrada de nuevos proveedores al sistema.
-    * **Relación Presupuesto-Adjudicación:** La correlación observada entre precio base y valor adjudicado muestra una tendencia a la {'optimización' if avg_ahorro > 0.05 else 'estabilidad'} presupuestal.
+    * **Eficiencia Global:** Ahorro promedio de **{avg_ahorro:.2%}** sobre el valor total.
+    * **Perfil de Competencia:** El nivel predominante es **{max_competencia}**.
+    * **Relación Presupuesto-Adjudicación:** Tendencia a la {'optimización' if avg_ahorro > 0.05 else 'estabilidad'} presupuestal.
     """)
 
     # --- 4. Correlación ---
     st.subheader("Mapa de Relación Presupuestal")
-    fig_scat = px.scatter(
-        df, x="precio_base", y="valor_adjudicacion", color="nivel_competencia",
-        title="Dispersión: Precio Base vs Adjudicación (por nivel de competencia)",
-        opacity=0.6, log_x=True, log_y=True
-    )
+    fig_scat = px.scatter(df, x="precio_base", y="valor_adjudicacion", color="nivel_competencia",
+                          title="Dispersión: Precio Base vs Adjudicación", opacity=0.6, log_x=True, log_y=True)
     st.plotly_chart(fig_scat, use_container_width=True)
