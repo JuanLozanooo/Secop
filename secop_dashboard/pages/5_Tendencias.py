@@ -12,12 +12,21 @@ st.write(
 )
 
 if st.button("Generar Informe de Tendencias"):
-    df = get_table_sample(limit=25000)  # Aumentamos muestra para mejor precisión
+    df = get_table_sample(limit=25000)
 
-    # Limpieza de datos
+    # 1. Normalización total de columnas para evitar KeyErrors
+    df.columns = df.columns.str.strip().str.lower()
+
+    # 2. Definición de columnas esperadas (según tu esquema real)
     numeric_cols = ["anio", "mes", "valor_adjudicacion", "precio_base", "ahorro_obtenido", "ofertas_recibidas"]
+
+    # 3. Conversión segura: solo procesamos lo que existe
     for col in numeric_cols:
-        df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce").fillna(0)
+        else:
+            st.error(f"Error: La columna esperada '{col}' no existe en la base de datos.")
+            st.stop()
 
     # --- 1. Tendencia de Valor y Eficiencia (Ahorro) ---
     st.subheader("Evolución de Valor y Eficiencia")
@@ -41,6 +50,7 @@ if st.button("Generar Informe de Tendencias"):
     col1, col2 = st.columns(2)
 
     with col1:
+        # Usamos nombres en minúsculas
         df_comp = df.groupby("nivel_competencia")["id_proceso"].count().reset_index()
         fig_comp = px.pie(df_comp, names="nivel_competencia", values="id_proceso",
                           title="Distribución de Niveles de Competencia", hole=0.4)
@@ -55,15 +65,15 @@ if st.button("Generar Informe de Tendencias"):
     st.divider()
     st.subheader("💡 Insights Estratégicos")
 
-    avg_ahorro = df["ahorro_obtenido"].sum() / df["valor_adjudicacion"].sum() if df[
-                                                                                     "valor_adjudicacion"].sum() > 0 else 0
+    total_val = df["valor_adjudicacion"].sum()
+    avg_ahorro = df["ahorro_obtenido"].sum() / total_val if total_val > 0 else 0
     max_competencia = df.groupby("nivel_competencia")["id_proceso"].count().idxmax()
 
     st.markdown(f"""
     * **Eficiencia Global:** El ahorro promedio obtenido sobre el valor total adjudicado es del **{avg_ahorro:.2%}**. 
       * *Interpretación:* Si este porcentaje es bajo, sugiere que los precios base están muy ajustados al valor real del mercado.
     * **Perfil de Competencia:** El nivel de competencia predominante es **{max_competencia}**.
-      * *Interpretación:* Esto indica la facilidad de entrada de nuevos proveedores al sistema. Un dominio de nivel 'Bajo' podría sugerir barreras de entrada técnicas o logísticas.
+      * *Interpretación:* Esto indica la facilidad de entrada de nuevos proveedores al sistema.
     * **Relación Presupuesto-Adjudicación:** La correlación observada entre precio base y valor adjudicado muestra una tendencia a la {'optimización' if avg_ahorro > 0.05 else 'estabilidad'} presupuestal.
     """)
 
