@@ -214,8 +214,30 @@ def get_table_sample(limit: int = 15000) -> pd.DataFrame:
 
 def insert_record(record: Dict[str, Any]) -> None:
     engine = get_engine()
-    payload = {k: (None if v in ("", "Sin dato") else v) for k, v in record.items()}
-    df = pd.DataFrame([payload])
+
+    # Lista de campos que sabemos que son numéricos en la BD
+    numeric_fields = [
+        "precio_base", "valor_adjudicacion", "ahorro_obtenido",
+        "porcentaje_ejecucion", "duracion_dias", "proveedores_invitados",
+        "proveedores_interesados", "ofertas_recibidas", "proveedores_unicos"
+    ]
+
+    processed_record = {}
+    for k, v in record.items():
+        # Si el valor está vacío, enviamos None
+        if v in ("", "Sin dato"):
+            processed_record[k] = None
+        # Si es un campo numérico, reemplazamos coma por punto y convertimos a float
+        elif k in numeric_fields and isinstance(v, str):
+            clean_val = v.replace(",", ".")
+            try:
+                processed_record[k] = float(clean_val)
+            except ValueError:
+                processed_record[k] = None  # O guarda el original si prefieres
+        else:
+            processed_record[k] = v
+
+    df = pd.DataFrame([processed_record])
     df.to_sql(TABLE_NAME, engine, if_exists="append", index=False)
 
 
