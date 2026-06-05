@@ -10,57 +10,66 @@ with st.form("form_agregar", clear_on_submit=True):
     c1, c2 = st.columns(2)
 
     with c1:
+        id_proceso = st.text_input("ID Proceso")
         entidad = st.text_input("Entidad")
-        nit_entidad = st.text_input("Nit Entidad")
-        departamento_entidad = st.text_input("Departamento Entidad")
-        ciudad_entidad = st.text_input("Ciudad Entidad")
-        ordenentidad = st.text_input("OrdenEntidad")
-        fecha_pub = st.text_input("Fecha de Publicacion del Proceso")
-        precio_base = st.text_input("Precio Base")
-        modalidad = st.text_input("Modalidad de Contratacion")
-        duracion = st.text_input("Duracion")
-        unidad_duracion = st.text_input("Unidad de Duracion")
-        proveedores_invitados = st.text_input("Proveedores Invitados")
-
-    with c2:
-        proveedores_manifestaron = st.text_input("Proveedores que Manifestaron Interes")
-        conteo_respuestas = st.text_input("Conteo de Respuestas a Ofertas")
-        proveedores_unicos = st.text_input("Proveedores Unicos con Respuestas")
-        numero_lotes = st.text_input("Numero de Lotes")
-        valor_adjudicacion = st.text_input("Valor Total Adjudicacion")
-        codigo_categoria = st.text_input("Codigo Principal de Categoria")
+        nit_entidad = st.text_input("NIT Entidad")
+        departamento = st.text_input("Departamento")
+        ciudad = st.text_input("Ciudad")
+        tipo_entidad = st.text_input("Tipo de Entidad (Nacional/Territorial)")
+        fecha_publicacion = st.text_input("Fecha de Publicación (YYYY-MM-DD)")
+        anio = st.text_input("Año")
+        mes = st.text_input("Mes")
+        trimestre = st.text_input("Trimestre")
+        modalidad_contratacion = st.text_input("Modalidad de Contratación")
         tipo_contrato = st.text_input("Tipo de Contrato")
         subtipo_contrato = st.text_input("Subtipo de Contrato")
-        estado_resumen = st.text_input("Estado Resumen")
-        estado_procedimiento = st.text_input("Estado del Procedimiento")
-        adjudicado = st.text_input("Adjudicado")
+
+    with c2:
+        categoria_compra = st.text_input("Categoría de Compra")
+        duracion_dias = st.text_input("Duración en Días")
+        proveedores_invitados = st.text_input("Proveedores Invitados")
+        proveedores_interesados = st.text_input("Proveedores Interesados")
+        ofertas_recibidas = st.text_input("Ofertas Recibidas")
+        proveedores_unicos = st.text_input("Proveedores Únicos")
+        precio_base = st.text_input("Precio Base")
+        valor_adjudicacion = st.text_input("Valor Adjudicación")
+        ahorro_obtenido = st.text_input("Ahorro Obtenido")
+        porcentaje_ejecucion = st.text_input("Porcentaje de Ejecución")
+        nivel_competencia = st.text_input("Nivel de Competencia (Alta/Media/Baja)")
+        estado_proceso = st.text_input("Estado del Proceso")
+        adjudicado = st.text_input("Adjudicado (Si/No)")
 
     submitted = st.form_submit_button("Guardar registro")
 
 if submitted:
+    # Las llaves de este diccionario deben ser EXACTAMENTE las columnas de tu BD
     record = {
-        "Entidad": entidad,
-        "Nit Entidad": nit_entidad,
-        "Departamento Entidad": departamento_entidad,
-        "Ciudad Entidad": ciudad_entidad,
-        "OrdenEntidad": ordenentidad,
-        "Fecha de Publicacion del Proceso": fecha_pub,
-        "Precio Base": precio_base,
-        "Modalidad de Contratacion": modalidad,
-        "Duracion": duracion,
-        "Unidad de Duracion": unidad_duracion,
-        "Proveedores Invitados": proveedores_invitados,
-        "Proveedores que Manifestaron Interes": proveedores_manifestaron,
-        "Conteo de Respuestas a Ofertas": conteo_respuestas,
-        "Proveedores Unicos con Respuestas": proveedores_unicos,
-        "Numero de Lotes": numero_lotes,
-        "Valor Total Adjudicacion": valor_adjudicacion,
-        "Codigo Principal de Categoria": codigo_categoria,
-        "Tipo de Contrato": tipo_contrato,
-        "Subtipo de Contrato": subtipo_contrato,
-        "Estado Resumen": estado_resumen,
-        "Estado del Procedimiento": estado_procedimiento,
-        "Adjudicado": adjudicado,
+        "id_proceso": id_proceso,
+        "entidad": entidad,
+        "nit_entidad": nit_entidad,
+        "departamento": departamento,
+        "ciudad": ciudad,
+        "tipo_entidad": tipo_entidad,
+        "fecha_publicacion": fecha_publicacion,
+        "anio": anio,
+        "mes": mes,
+        "trimestre": trimestre,
+        "modalidad_contratacion": modalidad_contratacion,
+        "tipo_contrato": tipo_contrato,
+        "subtipo_contrato": subtipo_contrato,
+        "categoria_compra": categoria_compra,
+        "duracion_dias": duracion_dias,
+        "proveedores_invitados": proveedores_invitados,
+        "proveedores_interesados": proveedores_interesados,
+        "ofertas_recibidas": ofertas_recibidas,
+        "proveedores_unicos": proveedores_unicos,
+        "precio_base": precio_base,
+        "valor_adjudicacion": valor_adjudicacion,
+        "ahorro_obtenido": ahorro_obtenido,
+        "porcentaje_ejecucion": porcentaje_ejecucion,
+        "nivel_competencia": nivel_competencia,
+        "estado_proceso": estado_proceso,
+        "adjudicado": adjudicado
     }
 
     try:
